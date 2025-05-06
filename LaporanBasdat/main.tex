@@ -1,0 +1,56 @@
+\documentclass[a4paper,12pt]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{lipsum}
+
+\title{Laporan Praktikum\\
+Basis Data}
+\author{}
+\date{}
+
+
+\begin{document}
+
+% Halaman Cover
+\begin{titlepage}
+    \centering
+
+    \includegraphics[width=0.3\textwidth]{images/logo-tekkom.png}\\[1cm]
+
+    {\Huge \textbf{Laporan Praktikum}\\[0.3cm]}
+    {\Huge \textbf{Basis Data}}\\[1cm]
+    
+    {\Large \textit{JUDUL MODUL 1}}\\[3cm]
+    
+    {\large \textit{Departemen Teknik Komputer}}\\
+    {\large \textit{Institut Teknologi Sepuluh Nopember}}\\
+    {\large \textit{Surabaya}}\\[3cm]
+
+    \hfill Penulis: lab b201\\
+    \hfill 2025
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+%Modul
+\include{Modul.tex}
+
+%Dasar Teori
+\include{dasarTeori}
+
+%Hasil Praktikum
+\include{HasilPraktikum.tex}
+
+%Tugas Modul
+\include{TugasModul.tex}
+
+%Tugas Asistensi
+\include{TugasAsistensi.tex} %Jika tidak ada Tugas Asistensi, maka bisa dihapus
+
+%Kesimpulan
+\include{Kesimpulan.tex}
+
+\end{document}

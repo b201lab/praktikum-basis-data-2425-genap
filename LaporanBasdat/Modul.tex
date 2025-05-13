@@ -1,6 +1,281 @@
-\chapter*{Modul}
 \addcontentsline{toc}{chapter}{Modul}
+\chapter{Implementasi Indexing pada PostgreSQL}
+\section{Pendahuluan}
+Index pada database adalah struktur data khusus yang mempercepat operasi pencarian dan pengambilan data. Analoginya seperti indeks pada buku yang membantu kita menemukan konten tertentu dengan cepat tanpa perlu membaca seluruh buku. Dalam PostgreSQL, index disimpan dalam struktur khusus yang mengoptimalkan pencarian berdasarkan kolom tertentu.
 
-%Isi modul disini
+Implementasi indexing yang tepat merupakan salah satu strategi utama untuk meningkatkan performa database, terutama pada sistem dengan data besar dan tingkat konkurensi tinggi.
 
-\lipsum[1-4] %Hapus jika ada modul
+\subsection{Tujuan Praktikum}
+Dilaksanakannya praktikum indexing, praktikan diharapkan mampu:
+\begin{enumerate}
+    \item Memahami konsep dasar indexing pada database PostgreSQL
+    \item Mempelajari tipe-tipe index di PostgreSQL
+    \item Mengimplementasikan index yang tepat untuk sebuah skenario
+    \item Menganalisis dampak index terhadap performa query konkuren
+\end{enumerate}
+
+\section{Konsep Dasar Indexing}
+
+\subsection{Apa itu Index?}
+Index pada database bekerja mirip dengan indeks buku: membantu sistem menemukan data dengan cepat tanpa memeriksa seluruh tabel (table scan). Index menyimpan pointer ke baris data dalam tabel berdasarkan nilai kolom yang diindeks.
+
+\subsection{Bagaimana Index Bekerja}
+
+Ketika query dijalankan, PostgreSQL menganalisis apakah menggunakan index akan lebih efisien daripada melakukan table scan. Jika menggunakan index lebih efisien, PostgreSQL akan:
+\begin{enumerate}
+    \item Mencari data di index berdasarkan kondisi WHERE
+    \item Menemukan referensi (pointer) ke baris data yang relevan
+    \item Mengambil data dari tabel menggunakan pointer tersebut
+\end{enumerate}
+
+\subsection{Kapan Menggunakan Index}
+Index sangat berguna pada:
+\begin{enumerate}
+    \item Kolom yang sering digunakan dalam klausa WHERE
+    \item Kolom yang sering digunakan untuk JOIN antar tabel
+    \item Kolom yang sering digunakan dalam klausa ORDER BY atau GROUP BY
+    \item Tabel berukuran besar dengan query yang hanya mengambil sebagian kecil data
+\end{enumerate}
+
+\subsection{Kapan Tidak Menggunakan Index}
+Index tidak selalu bermanfaat pada:
+\begin{enumerate}
+    \item Tabel kecil yang lebih efisien dilakukan sequential scan
+    \item Kolom dengan kardinalitas rendah (nilai yang berbeda sedikit)
+    \item Kolom yang jarang digunakan dalam query
+    \item Tabel yang sering diupdate/dihapus (overhead pemeliharaan index)
+\end{enumerate}
+
+\subsection{Dampak Index pada Performa}
+Index memberikan dampak pada:
+\begin{enumerate}
+    \item \textbf{SELECT}: Mempercepat query dengan mengurangi jumlah baris yang perlu diperiksa
+    \item \textbf{INSERT}: Memerlukan overhead tambahan untuk memperbarui index
+    \item \textbf{UPDATE}: Memerlukan overhead untuk memperbarui index jika kolom yang diindex berubah
+    \item \textbf{DELETE}: Memerlukan overhead untuk memperbarui index
+\end{enumerate}
+
+\section{Jenis-jenis Index di PostgreSQL}
+
+PostgreSQL menyediakan beberapa jenis index yang dapat dipilih sesuai dengan kebutuhan:
+
+\subsection{B-tree Index}
+\begin{enumerate}
+    \item Index default di PostgreSQL
+    \item Efisien untuk perbandingan dengan operator equality (=) dan range $(<, >, <=, >=, BETWEEN)$
+    \item Mendukung urutan untuk ORDER BY
+    \item Cocok untuk kebanyakan kasus penggunaan
+\end{enumerate}
+
+\subsection{Hash Index}
+\begin{enumerate}
+    \item Optimal hanya untuk operator equality (=)
+    \item Lebih cepat dari B-tree untuk operasi equality sederhana
+    \item Tidak mendukung range queries atau sorting
+    \item Dirancang untuk tabel hash di memori
+\end{enumerate}
+
+\subsection{GiST Index (Generalized Search Tree)}
+\begin{enumerate}
+    \item Index untuk data geometri, text-search, dan data kompleks lainnya
+    \item Fleksibel, dapat digunakan untuk data custom
+    \item Mendukung nearest-neighbor searches
+    \item Digunakan untuk full-text search, data geografis, dll
+\end{enumerate}
+
+\subsection{GIN Index (Generalized Inverted Index)}
+\begin{enumerate}
+    \item Dirancang untuk nilai yang memiliki multiple components (arrays, jsonb, text-search)
+    \item Efisien untuk pencarian yang membutuhkan matching multiple values
+    \item Cocok untuk kolom yang menyimpan data semi-structured
+    \item Lebih lambat untuk operasi insert dibanding GiST
+\end{enumerate}
+
+\subsection{BRIN Index (Block Range INdex)}
+\begin{enumerate}
+    \item Dirancang untuk tabel sangat besar dengan data yang terurut secara natural
+    \item Sangat kecil dan efisien untuk kolom seperti timestamp, ID sequential, dll
+    \item Kinerja query lebih rendah dari B-tree tapi overhead penyimpanan jauh lebih kecil
+\end{enumerate}
+
+\subsection{SP-GiST Index (Space-Partitioned GiST)}
+\begin{enumerate}
+    \item Untuk data yang bisa dipartisi secara non-overlapping
+    \item Baik untuk data hierarchical seperti rentang IP, geo-data
+    \item Mendukung nearest-neighbor searches
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{|l|p{10cm}|}
+		\hline
+		\textbf{Jenis Index} & \textbf{Karakteristik dan Penggunaan} \\
+		\hline
+		B-tree & Index default PostgreSQL. Efisien untuk operasi perbandingan (=, <, >, BETWEEN) dan mendukung pengurutan (ORDER BY). \\
+		\hline
+		Hash & Khusus untuk operasi equality (=). Lebih cepat dari B-tree untuk lookup sederhana, tidak mendukung range. \\
+		\hline
+		GiST/GIN & Untuk data kompleks seperti full-text search, data spasial, array, dan JSON. GIN lebih lambat untuk insert tapi lebih cepat untuk search. \\
+		\hline
+		BRIN & Untuk tabel besar dengan data terurut secara natural (seperti timestamp). Ukuran kecil, overhead rendah. \\
+		\hline
+	\end{tabular}
+	\caption{Jenis-jenis Index di PostgreSQL dan Penggunaannya}
+\end{figure}
+
+\subsection{Benchmark pada Konkurensi Tinggi}
+
+Pada situasi konkurensi tinggi, performa index dapat dipengaruhi oleh beberapa faktor:
+
+\begin{itemize}
+    \item \textbf{Contention}: Kompetisi antar koneksi untuk mengakses data yang sama
+    \item \textbf{Lock contention}: Waktu tunggu karena lock pada baris atau tabel
+    \item \textbf{Index bloat}: Overhead karena index yang jarang di-maintenance
+\end{itemize}
+
+\section{Best Practices Implementasi Indexing}
+
+\begin{enumerate}
+    \item \textbf{Index kolom yang sering digunakan dalam WHERE, JOIN, ORDER BY}
+    \item \textbf{Hindari over-indexing}: Terlalu banyak index berdampak negatif pada performa INSERT/UPDATE/DELETE
+    \item \textbf{Gunakan composite index} untuk query dengan multiple conditions
+    \item \textbf{Perhatikan urutan kolom} pada composite index (most selective first)
+    \item \textbf{Pertimbangkan partial index} untuk subset data yang sering diakses
+    \item \textbf{Gunakan EXPLAIN ANALYZE} untuk validasi penggunaan index
+    \item \textbf{Jalankan VACUUM ANALYZE} secara berkala untuk memperbarui statistik
+    \item \textbf{Monitor ukuran dan penggunaan index} menggunakan pg\_stat\_*
+    \item \textbf{Lakukan REINDEX} pada index yang terfragmentasi
+    \item \textbf{Evaluasi trade-off} antara kecepatan query vs overhead pemeliharaan
+\end{enumerate}
+
+\section{Tahapan Praktikum}
+
+\subsection{Persiapan}
+\begin{enumerate}
+	\item Pastikan container Docker PostgreSQL sudah berjalan
+	\item Gunakan pgAdmin atau PSQL untuk mengakses database
+	\item Pastikan data sudah diimpor menggunakan script yang disediakan
+\end{enumerate}
+
+\subsection{Mengeksplorasi Execution Plan}
+Pertama, Anda akan mempelajari cara melihat execution plan query menggunakan EXPLAIN dan EXPLAIN ANALYZE:
+
+\begin{lstlisting}[language=SQL]
+	-- Menampilkan execution plan
+	EXPLAIN SELECT * FROM products WHERE category = 'Elektronik';
+	
+	-- Menampilkan execution plan beserta runtime
+	EXPLAIN ANALYZE SELECT * FROM products WHERE category = 'Elektronik';
+\end{lstlisting}
+
+\subsection{Mengukur Performa Query Tanpa Index}
+\begin{enumerate}
+	\item Jalankan query berikut tanpa index dan catat waktu eksekusinya:
+	
+	\begin{lstlisting}[language=SQL]
+		-- Query 1: Filter berdasarkan kategori
+		SELECT COUNT(*) FROM products WHERE category = 'Elektronik';
+		
+		-- Query 2: Filter berdasarkan range harga
+		SELECT * FROM products WHERE price BETWEEN 1000000 AND 5000000;
+		
+		-- Query 3: Filter berdasarkan tanggal pesanan
+		SELECT o.order_id, o.customer_id, o.order_date 
+		FROM orders o 
+		WHERE o.order_date BETWEEN '2023-06-01' AND '2023-06-30';
+		
+		-- Query 4: Join tanpa index
+		SELECT c.first_name, c.last_name, o.order_id, o.order_date, o.total_amount
+		FROM customers c 
+		JOIN orders o ON c.customer_id = o.customer_id 
+		WHERE c.city = 'Jakarta';
+		
+		-- Query 5: Aggregate yang berat
+		SELECT p.category, COUNT(*) as total_products, AVG(p.price) as avg_price
+		FROM products p
+		GROUP BY p.category
+		ORDER BY total_products DESC;
+	\end{lstlisting}
+	
+	\item Lakukan benchmark konkuren tanpa index:
+	
+	\begin{lstlisting}[language=bash]
+		# Di terminal
+		bash query_before.sql 20 100 10
+	\end{lstlisting}
+\end{enumerate}
+
+\subsection{Implementasi Index yang Tepat}
+Sekarang, tambahkan index yang sesuai untuk setiap query:
+
+\begin{lstlisting}[language=SQL]
+	-- Hapus index yang sudah ada (untuk tujuan praktikum)
+	DROP INDEX IF EXISTS idx_products_category;
+	DROP INDEX IF EXISTS idx_products_price;
+	DROP INDEX IF EXISTS idx_orders_date;
+	DROP INDEX IF EXISTS idx_customers_city;
+	
+	-- Index 1: B-Tree index untuk kategori produk
+	CREATE INDEX idx_products_category ON products(category);
+	
+	-- Index 2: B-Tree index untuk range harga
+	CREATE INDEX idx_products_price ON products(price);
+	
+	-- Index 3: B-Tree index untuk tanggal pesanan
+	CREATE INDEX idx_orders_date ON orders(order_date);
+	
+	-- Index 4: Index untuk city pada tabel customers
+	CREATE INDEX idx_customers_city ON customers(city);
+	
+	-- Index 5: Composite index untuk JOIN operation
+	CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+\end{lstlisting}
+
+\subsection{Mengukur Performa Setelah Indexing}
+\begin{enumerate}
+	\item Jalankan kembali query yang sama dan bandingkan waktu eksekusinya:
+	
+	\begin{lstlisting} [language=SQL]
+		-- Jalankan semua query yang sama seperti sebelumnya dan bandingkan execution plan
+		EXPLAIN ANALYZE SELECT COUNT(*) FROM products WHERE category = 'Elektronik';
+		-- dan seterusnya untuk query lainnya
+	\end{lstlisting}
+	
+	\item Lakukan benchmark konkuren dengan index:
+	
+	\begin{lstlisting} [language=bash]
+		# Di terminal
+		cd scripts
+		bash benchmark.sh ../praktikum/praktikum1_indexing/query_after.sql 20 100 10
+	\end{lstlisting}
+\end{enumerate}
+
+\subsection{Mempelajari Tipe Index Lain}
+PostgreSQL mendukung beberapa tipe index. Cobalah implementasi berikut:
+
+\begin{lstlisting} [language=SQL]
+	-- Index Partial untuk produk dengan stok rendah
+	CREATE INDEX idx_products_low_stock ON products(product_id, stock_quantity) 
+	WHERE stock_quantity < 10;
+	
+	-- Index menggunakan ekspresi untuk pencarian case-insensitive
+	CREATE INDEX idx_products_name_lower ON products(LOWER(name));
+	
+	-- BRIN Index untuk data berurutan (seperti timestamp)
+	CREATE INDEX idx_orders_date_brin ON orders USING BRIN(order_date);
+	
+	-- GIN Index untuk pencarian full-text (jika menggunakan PostgreSQL >= 9.6)
+	CREATE INDEX idx_products_description_gin ON products 
+	USING GIN(to_tsvector('english', description));
+\end{lstlisting}
+
+\section{Referensi}
+
+\begin{itemize}
+    \item \href{https://www.postgresql.org/docs/current/indexes.html}{PostgreSQL Documentation: Indexes}
+    \item \href{https://www.postgresql.org/docs/current/using-explain.html}{PostgreSQL Documentation: EXPLAIN}
+    \item \href{https://www.postgresql.org/docs/current/performance-tips.html}{PostgreSQL Documentation: Performance Tips}
+    \item \href{https://www.postgresql.org/docs/current/indexes-types.html}{PostgreSQL Documentation: Index Types}
+    \item \href{https://www.postgresql.org/docs/current/pgbench.html}{PostgreSQL Documentation: pgbench}
+\end{itemize}
+

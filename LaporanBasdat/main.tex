@@ -4,6 +4,83 @@
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage{lipsum}
+\usepackage[bahasa]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{courier}
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+
+
+% Package TikZ untuk diagram
+\usepackage{tikz}
+\usepackage{pgf}
+\usetikzlibrary{mindmap}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes,arrows}
+\usetikzlibrary{er}
+\usetikzlibrary{calc}
+
+% Library tambahan untuk diagram kompleks
+\usetikzlibrary{trees}
+\usetikzlibrary{shadows}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{decorations}
+
+% Atur penomoran section agar tidak terpengaruh chapter
+% Ini akan memungkinkan penomoran section dimulai dari 1 di setiap chapter
+\counterwithout{section}{chapter}
+
+% Konfigurasi hyperref
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Modul Praktikum Sistem Manajemen Basis Data},
+    pdfpagemode=FullScreen,
+}
+
+% Konfigurasi untuk kode program
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Konfigurasi header dan footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{}
+\fancyhead[R]{Departemen Teknik Komputer ITS}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
 
 \title{Laporan Praktikum\\
 Basis Data}

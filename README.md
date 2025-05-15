@@ -54,7 +54,7 @@ Ikuti langkah-langkah dalam README.md setiap modul praktikum secara berurutan.
 
 1. Praktikum dikerjakan dalam kelompok (4 orang per kelompok)
 2. Setiap kelompok mengerjakan semua modul praktikum
-4. Setiap kelompok membuat laporan akhir berisi:
+4. Setiap praktikan membuat laporan akhir berisi:
    - Modul
    - Dasar Teori
    - Analisis

@@ -1,0 +1,125 @@
+\addcontentsline{toc}{chapter}{Implementasi Partitioning pada PostgreSQL}
+\chapter*{Implementasi Partitioning pada PostgreSQL}
+\section{Pendahuluan}
+Partitioning adalah teknik untuk membagi tabel besar menjadi beberapa bagian yang lebih kecil secara fisik, namun tetap terlihat sebagai satu tabel secara logis. Dalam sistem database dengan volume data yang besar, partitioning menjadi strategi penting untuk meningkatkan performa, maintainability, dan skalabilitas.
+
+Ketika volume data tumbuh, performa query dapat menurun signifikan karena database harus memproses lebih banyak data. Dengan partitioning, database dapat membatasi jumlah data yang diakses saat menjalankan query, sehingga meningkatkan efisiensi operasi.
+
+\subsection{Tujuan Praktikum}
+Dilaksanakannya praktikum partitioning, praktikan diharapkan mampu:
+\begin{enumerate}
+    \item Memahami konsep partitioning pada database
+    \item Mengimplementasikan berbagai tipe partitioning pada PostgreSQL
+    \item Menganalisis dampak partitioning terhadap performa query
+    \item Mempelajari strategi partitioning yang tepat untuk berbagai jenis data
+\end{enumerate}
+
+\section{Konsep Dasar Partitioning}
+
+\subsection{Apa itu Partitioning?}
+Partitioning adalah teknik untuk membagi tabel besar menjadi beberapa bagian yang lebih kecil secara fisik tetapi tetap terlihat sebagai satu tabel secara logis. Hal ini memungkinkan database untuk mengoptimalkan query dengan hanya mengakses partisi yang relevan dengan query, bukan seluruh tabel.
+
+\subsection{Manfaat Partitioning}
+\begin{enumerate}
+    \item \textbf{Peningkatan Performa Query}: Query yang hanya mengakses subset data (misalnya satu bulan dari data time-series) dapat berjalan lebih cepat karena hanya mengakses partisi yang relevan
+    \item \textbf{Efisiensi Maintenance}: Operasi maintenance seperti backup, restore, dan archiving dapat dilakukan pada level partisi
+    \item \textbf{Optimalisasi Penyimpanan}: Data dengan pola akses berbeda dapat disimpan pada media penyimpanan yang berbeda (misalnya data terbaru pada SSD)
+    \item \textbf{Paralelisme}: Query terhadap beberapa partisi dapat dieksekusi secara paralel
+    \item \textbf{Penghapusan Data Efisien}: Menghapus data dalam jumlah besar dapat dilakukan dengan DROP PARTITION daripada DELETE yang lebih lambat
+\end{enumerate}
+
+\subsection{Kapan Menggunakan Partitioning}
+Partitioning sangat berguna pada:
+\begin{enumerate}
+    \item Tabel dengan volume data sangat besar (puluhan GB atau lebih)
+    \item Data dengan pola akses yang jelas berdasarkan kolom tertentu
+    \item Data time-series yang memiliki pola pemasukan dan penghapusan teratur
+    \item Tabel fakta pada data warehouse
+    \item Sistem yang memerlukan high-availability untuk data terbaru sementara data historis dapat diakses lebih lambat
+\end{enumerate}
+
+\subsection{Kapan Tidak Menggunakan Partitioning}
+Partitioning tidak selalu bermanfaat pada:
+\begin{enumerate}
+    \item Tabel dengan ukuran kecil atau menengah yang dapat diproses efisien tanpa partitioning
+    \item Tabel yang sering di-join dengan tabel lain (trade-off performa join vs. partitioning)
+    \item Sistem dengan pola query yang sulit diprediksi atau tidak selaras dengan strategi partitioning
+    \item Ketika overhead administrasi partisi lebih besar dari manfaatnya
+\end{enumerate}
+
+\section{Jenis-jenis Partitioning di PostgreSQL}
+
+PostgreSQL menyediakan beberapa tipe partitioning yang dapat dipilih sesuai dengan karakteristik data dan pola akses:
+
+\subsection{Range Partitioning}
+\begin{enumerate}
+    \item Membagi data berdasarkan rentang nilai pada kolom tertentu
+    \item Ideal untuk data time-series (tanggal, timestamp), nilai numerik berurutan
+    \item Sangat efektif untuk query yang mengakses data dalam rentang tertentu
+    \item Contoh: partisi data penjualan per bulan, per kuartal, atau per tahun
+\end{enumerate}
+
+\subsection{List Partitioning}
+\begin{enumerate}
+    \item Membagi data berdasarkan daftar nilai diskrit pada kolom tertentu
+    \item Cocok untuk kolom dengan nilai terbatas dan terdefinisi
+    \item Efektif untuk query yang mem-filter berdasarkan nilai spesifik
+    \item Contoh: partisi berdasarkan region, status pesanan, kategori produk
+\end{enumerate}
+
+\subsection{Hash Partitioning}
+\begin{enumerate}
+    \item Membagi data berdasarkan hasil fungsi hash dari nilai kolom
+    \item Mendistribusikan data secara relatif merata di semua partisi
+    \item Cocok saat tidak ada pola akses yang jelas atau untuk distribusi beban
+    \item Kurang optimal untuk query range, tetapi baik untuk paralelisme
+    \item Contoh: partisi berdasarkan hash dari customer\_id untuk distribusi merata
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{|l|p{10cm}|}
+		\hline
+		\textbf{Tipe Partitioning} & \textbf{Karakteristik dan Penggunaan} \\
+		\hline
+		Range & Membagi berdasarkan rentang nilai (tanggal, timestamp, numerik). Ideal untuk data time-series dan query range. Misalnya: data per bulan, per semester, atau per tahun. \\
+		\hline
+		List & Membagi berdasarkan daftar nilai diskrit. Cocok untuk kolom dengan nilai terbatas seperti region, status, kategori. Misalnya: data per provinsi, per status pesanan. \\
+		\hline
+		Hash & Membagi berdasarkan hasil fungsi hash. Distribusi data merata, cocok untuk paralelisme dan distribusi beban. Misalnya: hash dari customer\_id untuk distribusi merata. \\
+		\hline
+	\end{tabular}
+	\caption{Jenis-jenis Partitioning di PostgreSQL dan Penggunaannya}
+\end{figure}
+
+\subsection{Sub-partitioning (Multi-level Partitioning)}
+PostgreSQL juga mendukung partitioning bertingkat (sub-partitioning), di mana partisi dapat dibagi lagi menjadi sub-partisi. Hal ini memungkinkan fleksibilitas lebih tinggi dalam manajemen data:
+
+\begin{enumerate}
+    \item Partisi level pertama bisa menggunakan Range (misalnya, per tahun)
+    \item Sub-partisi bisa menggunakan List (misalnya, per region atau status)
+    \item Atau kombinasi lain dari jenis partitioning
+\end{enumerate}
+
+\section{Best Practices Implementasi Partitioning}
+
+\begin{enumerate}
+    \item \textbf{Pilih kolom partitioning yang sesuai} dengan pola akses query yang paling umum
+    \item \textbf{Batasi jumlah partisi} menjadi jumlah yang dapat dikelola (tidak terlalu banyak)
+    \item \textbf{Pertimbangkan partitioning default} untuk menangani data yang tidak masuk kategori partisi yang ada
+    \item \textbf{Buat index pada setiap partisi} untuk kolom yang sering digunakan dalam query
+    \item \textbf{Gunakan constraint exclusion} untuk memastikan query optimizer melewatkan partisi yang tidak relevan
+    \item \textbf{Pertimbangkan tools otomatisasi} untuk mengelola partisi yang dibuat secara berkala
+    \item \textbf{Uji performa} untuk memverifikasi bahwa partitioning memberikan manfaat yang diharapkan
+    \item \textbf{Kombinasikan dengan strategi penyimpanan} (tablespace) untuk pengoptimalan lebih lanjut
+\end{enumerate}
+\section{Referensi}
+
+\begin{itemize}
+    \item \href{https://www.postgresql.org/docs/current/ddl-partitioning.html}{PostgreSQL Documentation: Table Partitioning}
+    \item \href{https://www.postgresql.org/docs/current/ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE}{PostgreSQL: Declarative Partitioning}
+    \item \href{https://wiki.postgresql.org/wiki/Table_partitioning}{PostgreSQL Wiki: Table Partitioning}
+    \item \href{https://www.postgresql.org/docs/current/ddl-partitioning.html#DDL-PARTITIONING-IMPLEMENTATION}{PostgreSQL: Partition Pruning}
+    \item \href{https://www.postgresql.org/docs/current/ddl-partitioning.html#DDL-PARTITIONING-CONSTRAINT-EXCLUSION}{PostgreSQL: Constraint Exclusion}
+\end{itemize}
+

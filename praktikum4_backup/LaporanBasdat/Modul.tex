@@ -1,0 +1,111 @@
+\addcontentsline{toc}{chapter}{Backup dan Recovery pada PostgreSQL}
+\chapter*{Backup dan Recovery pada PostgreSQL}
+\setcounter{section}{0}
+\section{Pendahuluan}
+Backup dan recovery merupakan aspek kritis dalam pengelolaan database. Sebagai database administrator, melindungi data dari kehilangan dan kerusakan merupakan tanggung jawab utama. PostgreSQL menyediakan beragam metode backup dan recovery yang dapat disesuaikan dengan kebutuhan sistem, batasan operasional, dan tujuan bisnis.
+
+Strategi backup dan recovery yang tepat menjamin ketahanan (resilience) dan ketersediaan (availability) sistem database. Dalam lingkungan produksi, kemampuan untuk memulihkan data dengan cepat dan akurat saat terjadi kegagalan sistem, kesalahan manusia, atau bencana dapat menjadi perbedaan antara operasi bisnis yang berkelanjutan dan kerugian finansial yang signifikan.
+
+\subsection{Tujuan Praktikum}
+Dilaksanakannya praktikum backup dan recovery, praktikan diharapkan mampu:
+\begin{enumerate}
+    \item Memahami konsep backup dan recovery pada database
+    \item Mengimplementasikan berbagai tipe backup di PostgreSQL
+    \item Melakukan recovery data dari backup
+    \item Menerapkan strategi backup yang tepat sesuai kebutuhan
+\end{enumerate}
+
+\section{Konsep Dasar Backup dan Recovery}
+
+\subsection{Terminologi dan Konsep Kunci}
+\begin{enumerate}
+    \item \textbf{Backup}: Proses membuat salinan data untuk pemulihan jika terjadi kehilangan data
+    \item \textbf{Recovery}: Proses memulihkan database ke keadaan yang konsisten menggunakan data backup
+    \item \textbf{Recovery Point Objective (RPO)}: Jumlah maksimal data yang dapat hilang, diukur dalam waktu
+    \item \textbf{Recovery Time Objective (RTO)}: Waktu maksimal yang diperbolehkan untuk memulihkan sistem
+    \item \textbf{Full Backup}: Backup seluruh database
+    \item \textbf{Incremental Backup}: Backup hanya perubahan sejak backup terakhir
+    \item \textbf{Differential Backup}: Backup perubahan sejak full backup terakhir
+    \item \textbf{Point-in-Time Recovery (PITR)}: Kemampuan memulihkan ke titik waktu tertentu
+\end{enumerate}
+
+\subsection{Tipe-tipe Backup di PostgreSQL}
+PostgreSQL menyediakan beberapa metode backup yang dapat digunakan sesuai kebutuhan:
+
+\begin{enumerate}
+    \item \textbf{Logical Backup}: 
+    \begin{itemize}
+        \item Menggunakan utilitas \texttt{pg\_dump} dan \texttt{pg\_dumpall}
+        \item Menghasilkan file SQL atau format khusus yang berisi perintah untuk merekonstruksi database
+        \item Fleksibel dan dapat dipulihkan secara selektif
+        \item Cocok untuk database kecil hingga menengah
+    \end{itemize}
+    
+    \item \textbf{Physical Backup}:
+    \begin{itemize}
+        \item Salinan langsung dari file data PostgreSQL
+        \item Lebih cepat untuk database besar
+        \item Membutuhkan akses ke sistem file
+        \item Membutuhkan penghentian database atau konsistensi filesystem
+    \end{itemize}
+    
+    \item \textbf{Continuous Archiving}:
+    \begin{itemize}
+        \item Menggunakan Write-Ahead Logs (WAL) untuk mencatat semua perubahan
+        \item Memungkinkan Point-in-Time Recovery (PITR)
+        \item Kombinasi dari base backup dan WAL archives
+        \item Cocok untuk database dengan zero/minimal data loss requirement
+    \end{itemize}
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{|l|p{4cm}|p{4cm}|p{4cm}|}
+		\hline
+		\textbf{Aspek} & \textbf{Logical Backup} & \textbf{Physical Backup} & \textbf{Continuous Archiving} \\
+		\hline
+		Metode & pg\_dump, pg\_dumpall & File system backup & Base backup + WAL archiving \\
+		\hline
+		Kelebihan & Selektif, platform-independent, dapat restore sebagian & Cepat untuk database besar, overhead rendah & Point-in-time recovery, minimal data loss \\
+		\hline
+		Kekurangan & Lambat untuk database besar, overhead tinggi & Tidak selektif, platform-dependent & Kompleksitas setup, kebutuhan penyimpanan tinggi \\
+		\hline
+		Ideal untuk & Database kecil-menengah, backup selektif & Database besar, full restore cepat & Sistem kritikal, zero data loss requirement \\
+		\hline
+	\end{tabular}
+	\caption{Perbandingan Tipe Backup di PostgreSQL}
+\end{figure}
+
+\section{Strategi Backup yang Efektif}
+
+\subsection{Faktor yang Mempengaruhi Strategi Backup}
+\begin{enumerate}
+    \item \textbf{Volume Data}: Ukuran database mempengaruhi waktu backup dan storage requirements
+    \item \textbf{Window Backup}: Periode waktu yang tersedia untuk melakukan backup
+    \item \textbf{RPO dan RTO}: Persyaratan bisnis untuk toleransi kehilangan data dan waktu pemulihan
+    \item \textbf{Resource Constraints}: Keterbatasan penyimpanan, CPU, dan bandwith jaringan
+    \item \textbf{Frekuensi Perubahan}: Seberapa sering dan banyak data berubah
+    \item \textbf{Retensi Backup}: Berapa lama backup harus disimpan
+\end{enumerate}
+
+\subsection{Rekomendasi Best Practices}
+\begin{enumerate}
+    \item \textbf{Redundansi}: Simpan beberapa salinan backup di lokasi berbeda
+    \item \textbf{Verifikasi Backup}: Secara teratur menguji integritas backup dengan test restore
+    \item \textbf{Otomatisasi}: Jadwalkan backup secara reguler menggunakan cron jobs atau tools
+    \item \textbf{Monitoring}: Pantau proses backup dan segera tangani kegagalan
+    \item \textbf{Dokumentasi}: Dokumentasikan prosedur backup dan recovery secara detail
+    \item \textbf{Enkripsi}: Lindungi data backup dengan enkripsi jika berisi informasi sensitif
+    \item \textbf{Rotasi Backup}: Implementasikan strategi rotasi untuk mengoptimalkan penyimpanan
+    \item \textbf{Strategi Berlapis}: Kombinasikan beberapa metode backup (misal: full backup mingguan + incremental harian + continuous archiving)
+\end{enumerate}
+\section{Referensi}
+
+\begin{itemize}
+    \item \href{https://www.postgresql.org/docs/current/backup.html}{PostgreSQL Documentation: Backup and Restore}
+    \item \href{https://www.postgresql.org/docs/current/continuous-archiving.html}{PostgreSQL: Continuous Archiving and PITR}
+    \item \href{https://www.postgresql.org/docs/current/high-availability.html}{PostgreSQL: High Availability}
+    \item \href{https://wiki.postgresql.org/wiki/Backup_in_practice}{PostgreSQL Wiki: Backup in Practice}
+    \item \href{https://www.postgresql.org/docs/current/app-pgdump.html}{PostgreSQL: pg\_dump}
+    \item \href{https://www.postgresql.org/docs/current/app-pgrestore.html}{PostgreSQL: pg\_restore}
+\end{itemize}
